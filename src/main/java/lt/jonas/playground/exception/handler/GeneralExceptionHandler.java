@@ -16,6 +16,7 @@ public class GeneralExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleException(MethodArgumentNotValidException ex) {
         String errorMessage = ex.getAllErrors().stream().reduce("", (result, error) -> result + error.getDefaultMessage() + "\r\n", (result1, result2) -> result1 + result2);
+        LOG.error(errorMessage);
         return new ResponseEntity<>(
             errorMessage,
             HttpStatus.BAD_REQUEST);
