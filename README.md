@@ -89,6 +89,8 @@ Set property 'kid.always.waits' to 'true' and kid will always want to wait.
 
 IDE - IntelliJ
 
+Maven V3
+
 Java V11
 
 Spring-boot V2.7.15
