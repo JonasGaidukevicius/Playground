@@ -13,7 +13,6 @@ public class KidView {
     private String name;
     private Integer age;
     private String customerCode;
-    private Boolean wantsToWait;
     private String ticketNumber;
 
     public static KidView kidToKidView(Kid kid) {

@@ -1,6 +1,7 @@
 package lt.jonas.playground.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.apachecommons.CommonsLog;
 import lt.jonas.playground.model.dto.AttractionRequest;
 import lt.jonas.playground.model.entity.Attraction;
 import lt.jonas.playground.model.view.AttractionView;
@@ -14,17 +15,20 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@CommonsLog
 public class AttractionService {
     private final AttractionRepository attractionRepository;
 
     @Transactional
-    public void createAttraction(AttractionRequest attractionRequest) {
+    public String createAttraction(AttractionRequest attractionRequest) {
         Attraction attraction = Attraction.builder()
                 .attractionType(attractionRequest.getAttractionType())
                 .name(attractionRequest.getName())
                 .capacity(attractionRequest.getCapacity())
                 .build();
         attractionRepository.save(attraction);
+        LOG.info(String.format("Created a new attraction '%s'.", attraction.getName()));
+        return attraction.getName();
     }
 
     @Transactional(readOnly = true)
@@ -40,7 +44,7 @@ public class AttractionService {
     }
 
     @Transactional()
-    public Attraction findByName(String attractionName) {
+    public Attraction findByName(String attractionName) throws EntityNotFoundException {
         return attractionRepository.findByName(attractionName)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("No attraction with name=%s was found. Playground was not created", attractionName)));
     }

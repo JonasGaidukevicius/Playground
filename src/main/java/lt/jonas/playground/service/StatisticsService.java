@@ -9,6 +9,7 @@ import lt.jonas.playground.model.search.PlaygroundAttractionSearch;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 
 @Service
@@ -26,7 +27,7 @@ public class StatisticsService {
     }
 
     @Transactional(readOnly = true)
-    public String calculatePlaygroundUtilization(String playgroundName) {
+    public String calculatePlaygroundUtilization(String playgroundName) throws EntityNotFoundException, IllegalArgumentException {
         PlaygroundAttractionSearch playgroundAttractionSearch = new PlaygroundAttractionSearch();
         playgroundAttractionSearch.setPlaygroundName(playgroundName);
         List<PlaygroundAttraction> playgroundAttractions = playgroundService.findByPlaygroundName(playgroundAttractionSearch);
@@ -40,7 +41,7 @@ public class StatisticsService {
     }
 
     @Transactional(readOnly = true)
-    public String calculateAttractionUtilization(String attractionName, String playgroundName) {
+    public String calculateAttractionUtilization(String attractionName, String playgroundName) throws EntityNotFoundException, IllegalArgumentException {
         PlaygroundAttractionSearch playgroundAttractionSearch = new PlaygroundAttractionSearch();
         playgroundAttractionSearch.setAttractionName(attractionName);
         playgroundAttractionSearch.setPlaygroundName(playgroundName);
@@ -51,7 +52,7 @@ public class StatisticsService {
 
     }
 
-    private double calculateAttractionUtilization(PlaygroundAttraction playgroundAttraction) {
+    private double calculateAttractionUtilization(PlaygroundAttraction playgroundAttraction) throws IllegalArgumentException {
         double utilization;
         AttractionType attractionType = playgroundAttraction.getAttraction().getAttractionType();
         Integer occupation = playgroundAttraction.getOccupation();

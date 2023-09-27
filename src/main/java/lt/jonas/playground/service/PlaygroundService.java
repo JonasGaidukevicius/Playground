@@ -44,7 +44,7 @@ public class PlaygroundService {
     private final KidService kidService;
 
     @Transactional
-    public void createPlayground(PlaygroundRequest playgroundRequest) {
+    public String createPlayground(PlaygroundRequest playgroundRequest) throws EntityNotFoundException {
         List<PlaygroundAttraction> playgroundAttractions = buildPlaygroundAttractions(playgroundRequest.getPlaygroundAttractionRequests());
 
         Playground playground = Playground.builder()
@@ -60,13 +60,15 @@ public class PlaygroundService {
         playgroundRepository.save(playground);
         playgroundAttractions.forEach(playgroundAttraction -> playgroundAttraction.setPlayground(playground));
         playgroundAttractionRepository.saveAll(playgroundAttractions);
+        LOG.info(String.format("Created a new playground '%s'.", playground.getName()));
+        return playground.getName();
     }
 
     private int calculatePlaygroundCapacity(List<PlaygroundAttraction> playgroundAttractions) {
         return playgroundAttractions.stream().reduce(0, (sum, playgroundAttraction) -> sum + playgroundAttraction.getAttraction().getCapacity(), Integer::sum);
     }
 
-    private List<PlaygroundAttraction> buildPlaygroundAttractions(List<PlaygroundAttractionRequest> playgroundAttractionRequests) {
+    private List<PlaygroundAttraction> buildPlaygroundAttractions(List<PlaygroundAttractionRequest> playgroundAttractionRequests) throws EntityNotFoundException {
         List<PlaygroundAttraction> playgroundAttractions = new ArrayList<>();
 
         playgroundAttractionRequests.forEach(attractionRequest -> {
@@ -83,7 +85,7 @@ public class PlaygroundService {
     }
 
     @Transactional(readOnly = true)
-    public PlaygroundView getPlayground(Long id) {
+    public PlaygroundView getPlayground(Long id) throws EntityNotFoundException {
         return playgroundRepository.findById(id).map(PlaygroundView::playgroundToPlaygroundView)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("No playground id=%s was found.", id)));
     }
@@ -94,7 +96,7 @@ public class PlaygroundService {
     }
 
     @Transactional()
-    public void addKidToPlayground(KidOperationOnPlaygroundRequest kidOperationOnPlaygroundRequest) {
+    public String addKidToPlayground(KidOperationOnPlaygroundRequest kidOperationOnPlaygroundRequest) throws ConditionsForActionNotMetException, EntityNotFoundException {
 
         Kid kid = kidService.findKidByCustomerCode(kidOperationOnPlaygroundRequest.getCustomerCode());
 
@@ -119,9 +121,10 @@ public class PlaygroundService {
                 playground.getPlaygroundQueue().put(playground.getQueueCount(), kid);
                 playground.setQueueCount(playground.getQueueCount() + 1);
                 kid.setQueuedToPlaygroundName(playground.getName());
-                LOG.info(String.format("Kid customer code '%s' was added to a queue for playground '%s'.", kid.getCustomerCode(), playground.getName()));
                 playgroundRepository.save(playground);
-                return;
+                String message = String.format("Kid customer code '%s' was added to a queue for playground '%s'.", kid.getCustomerCode(), playground.getName());
+                LOG.info(message);
+                return message;
             }
 
             throw new ConditionsForActionNotMetException(String.format("Playground '%s' does not have free space and kid does not want to wait.", playground.getName()));
@@ -132,7 +135,9 @@ public class PlaygroundService {
         playground.setVisitorsCount(playground.getVisitorsCount() + 1);
         addKidToRandomAttraction(playground.getPlaygroundAttractions());
         playgroundRepository.save(playground);
-        LOG.info(String.format("Kid customer code '%s' was added to a playground '%s'.", kidOperationOnPlaygroundRequest.getCustomerCode(), playground.getName()));
+        String message = String.format("Kid customer code '%s' was added to a playground '%s'.", kidOperationOnPlaygroundRequest.getCustomerCode(), playground.getName());
+        LOG.info(message);
+        return message;
     }
 
     private boolean playgroundHasNoFreeSpace(Playground playground) {
@@ -194,7 +199,8 @@ public class PlaygroundService {
     }
 
     @Transactional()
-    public void removeKidFromPlaygroundOrQueue(KidOperationOnPlaygroundRequest kidOperationOnPlaygroundRequest) {
+    public String removeKidFromPlaygroundOrQueue(KidOperationOnPlaygroundRequest kidOperationOnPlaygroundRequest)
+            throws EntityNotFoundException, ConditionsForActionNotMetException {
         Kid kid = kidService.findKidByCustomerCode(kidOperationOnPlaygroundRequest.getCustomerCode());
 
         if (!(kid.getPlayground() == null || kid.getQueuedToPlaygroundName() == null)) {
@@ -204,12 +210,15 @@ public class PlaygroundService {
         Playground playground = playgroundRepository.findByName(kidOperationOnPlaygroundRequest.getPlaygroundName())
                 .orElseThrow(() -> new EntityNotFoundException(String.format("No playground name=%s was found.", kidOperationOnPlaygroundRequest.getPlaygroundName())));
 
+        StringBuilder fullMessage = new StringBuilder();
         boolean kidRemovedFromPlayground = playground.getKidsInPlayground().remove(kid);
         if (kidRemovedFromPlayground) {
             kid.setTicketNumber(null);
             kid.setPlayground(null);
             removeKidFromRandomAttraction(playground.getPlaygroundAttractions());
-            LOG.info(String.format("Kid of customer code '%s' removed from playground '%s'.", kid.getCustomerCode(), playground.getName()));
+            String removedFromplaygroundMessage = String.format("Kid of customer code '%s' removed from playground '%s'.", kid.getCustomerCode(), playground.getName());
+            LOG.info(removedFromplaygroundMessage);
+            fullMessage.append(removedFromplaygroundMessage);
 
             // When kid was removed from playground, a kid from queue if available, is added to a playground
             if (!playground.getPlaygroundQueue().isEmpty()) {
@@ -226,7 +235,9 @@ public class PlaygroundService {
                 playground.setVisitorsCount(playground.getVisitorsCount() + 1);
                 addKidToRandomAttraction(playground.getPlaygroundAttractions());
 
-                LOG.info(String.format("Kid of customer code '%s' moved from queue to playground '%s'.", kidInQueue.getCustomerCode(), playground.getName()));
+                String movedToPlaygroundFromQueueMessage = String.format("Kid of customer code '%s' moved from queue to playground '%s'.", kidInQueue.getCustomerCode(), playground.getName());
+                LOG.info(movedToPlaygroundFromQueueMessage);
+                fullMessage.append("\r\n").append(movedToPlaygroundFromQueueMessage);
             }
         } else {
             Long keyToDelete = 0L;
@@ -238,11 +249,14 @@ public class PlaygroundService {
             Kid removedKid = playground.getPlaygroundQueue().remove(keyToDelete);
             if (removedKid != null) {
                 kid.setQueuedToPlaygroundName(null);
-                LOG.info(String.format("Kid of customer code '%s' removed from playground '%s' queue.", kid.getCustomerCode(), playground.getName()));
+                String removedFromQueue = String.format("Kid of customer code '%s' removed from playground '%s' queue.", kid.getCustomerCode(), playground.getName());
+                LOG.info(removedFromQueue);
+                fullMessage.append(removedFromQueue);
             }
         }
 
         playgroundRepository.save(playground);
+        return fullMessage.toString();
     }
 
     @Transactional(readOnly = true)
@@ -250,7 +264,7 @@ public class PlaygroundService {
         return playgroundRepository.findAll();
     }
 
-    public PlaygroundAttraction findByAttractionNameAndPlaygroundName(PlaygroundAttractionSearch playgroundAttractionSearch) {
+    public PlaygroundAttraction findByAttractionNameAndPlaygroundName(PlaygroundAttractionSearch playgroundAttractionSearch) throws EntityNotFoundException {
         List<PlaygroundAttraction> playgroundAttractions = playgroundAttractionRepository.findAll(PlaygroundAttractionSpecification.build(playgroundAttractionSearch));
         if (CollectionUtils.isEmpty(playgroundAttractions)) {
             throw new EntityNotFoundException(String.format("Attraction '%s' in playground '%s' was not found.",
@@ -261,7 +275,7 @@ public class PlaygroundService {
         return playgroundAttractions.get(0);
     }
 
-    public List<PlaygroundAttraction> findByPlaygroundName(PlaygroundAttractionSearch playgroundAttractionSearch) {
+    public List<PlaygroundAttraction> findByPlaygroundName(PlaygroundAttractionSearch playgroundAttractionSearch) throws EntityNotFoundException {
         List<PlaygroundAttraction> playgroundAttractions = playgroundAttractionRepository.findAll(PlaygroundAttractionSpecification.build(playgroundAttractionSearch));
         if (CollectionUtils.isEmpty(playgroundAttractions)) {
             throw new EntityNotFoundException(String.format("Attraction '%s' not found.", playgroundAttractionSearch.getAttractionName()));

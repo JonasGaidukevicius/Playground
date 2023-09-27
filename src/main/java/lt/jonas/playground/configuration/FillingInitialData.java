@@ -17,7 +17,7 @@ import java.util.TreeMap;
 
 @Configuration
 public class FillingInitialData {
-    @Value("${add.tickets}")
+    @Value("${add.tickets:false}")
     private boolean addTickets;
     @Bean
     @ConditionalOnProperty(value="insert.initial.data", havingValue = "true")
@@ -43,8 +43,9 @@ public class FillingInitialData {
             Kid kid8 = new Kid("Monika", 8, "bf218ddb-990d-4ab6-bd14-00a4ec1d0735");
             Kid kid9 = new Kid("Dylan", 7, "d4b499c2-5370-468d-9c75-993bc1ca9375");
             Kid kid10 = new Kid("Emma", 5, "d8ca9b5a-266c-4754-8224-886752d47496");
+            Kid kid11 = new Kid("Jerry", 4, "7076278a-d4f0-417a-b02a-e0e1fc027547");
 
-            //Adding tickets for kids
+            // Adding tickets for kids
             if (addTickets) {
                 kid2.setTicketNumber("aa567370-6611-42bc-ac7d-570777dc7673");
                 kid3.setTicketNumber("a55aa335-d71c-4b03-8379-80640050ff95");
@@ -55,9 +56,10 @@ public class FillingInitialData {
                 kid8.setTicketNumber("a5fc07c9-7633-496b-ba3f-baa8da9478cf");
                 kid9.setTicketNumber("c64f91b5-d235-4696-ad10-4b46138a2c90");
                 kid10.setTicketNumber("009cc5c0-49e7-45b5-9ab6-6987393d6d62");
+                kid11.setTicketNumber("cfaa22c1-a3a6-47e9-a000-7417f19eee0e");
             }
 
-            kidRepository.saveAll(List.of(kid1, kid2, kid3, kid4, kid5, kid6, kid7, kid8, kid9, kid10));
+            kidRepository.saveAll(List.of(kid1, kid2, kid3, kid4, kid5, kid6, kid7, kid8, kid9, kid10, kid11));
 
             // Inserting playground attractions
             PlaygroundAttraction playgroundAttraction1 = PlaygroundAttraction.builder()

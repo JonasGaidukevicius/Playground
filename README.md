@@ -2,6 +2,11 @@
 
 This application allows to create attractions, kids, playgrounds and playground attractions.
 
+Use swagger to perform actions. Locally it is accessed on `http://localhost:8080/swagger-ui/index.html`.
+
+In-memory H2 database is used to store data.
+
+To access in-memory database use link 'http://localhost:8080/h2-console'.
 
 ## Entities of application
 Attraction has name, type, capacity.
@@ -40,6 +45,13 @@ Count of visitors shows how many kids played and are playing at the playground.
 
 Queue count increases each time a new kid is enqueued.
 
+------------------------------------------------------
+Playground attraction has name, occupation.
+
+Name has to be unique, it is mandatory and up to 255 symbols.
+
+Occupation is calculated by the application.
+
 ## Features
 It is possible to buy a ticket for a kid, so he/she could be admitted into playground.
 
@@ -47,7 +59,7 @@ It is possible to add a kid to a playground.
 
 It is possible to enqueue a kid, when playground is full and kid wants to wait.
 
-it is possible to remove a kid from playground or playground queue.
+It is possible to remove a kid from playground or playground queue.
 
 It is possible to check visitors number of all playgrounds.
 
@@ -72,3 +84,14 @@ It is possible to insert initial data into database. It is necessary to set prop
 Also, if property 'add.tickets' set to 'true', for all kids tickets are added, except one.
 
 Set property 'kid.always.waits' to 'true' and kid will always want to wait.
+
+## Technology
+
+IDE - IntelliJ
+
+Java V11
+
+Spring-boot V2.7.15
+
+Lombok V1.18.30
+

@@ -10,7 +10,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PlaygroundAttractionSpecification {
-
     public static Specification<PlaygroundAttraction> build(PlaygroundAttractionSearch playgroundAttractionSearch) {
         Specification<PlaygroundAttraction> specification = Specification.where((Specification)null);
 
