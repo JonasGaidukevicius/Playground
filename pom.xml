@@ -12,7 +12,7 @@
 	<artifactId>playground</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>playground</name>
-	<description>Task for Swedbank</description>
+	<description>Task for work</description>
 	<properties>
 		<java.version>11</java.version>
 	</properties>
